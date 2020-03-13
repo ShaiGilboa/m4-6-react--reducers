@@ -81,7 +81,7 @@ function reducer(state, action) {
     case 'RESET':
       return 0;
     default:
-      throw new Error('Unrecognized action');
+      throw new Error(`Unrecognized action: ${action,type}`);
   }
 }
 
@@ -101,7 +101,7 @@ const Game = ({ count, dispatch }) => {
   return (
     <>
       <button onClick={() => dispatch({ type: 'INCREMENT' })}>Increment</button>
-      <button onClick={() => dispatch({ type: 'INCREMENT' })}>Decrement</button>
+      <button onClick={() => dispatch({ type: 'DECREMENT' })}>Decrement</button>
     </>
   );
 };
