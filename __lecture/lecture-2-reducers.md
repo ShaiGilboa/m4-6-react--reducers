@@ -152,7 +152,7 @@ Actions _describe an event_. They don't dictate what should happen to the state.
 { type: 'clear-form' }
 
 // Bad action: dictates what should happen with the state
-{ type: 'set-user-email', value: '' }
+{ type: 'set-user-email', value: '' } // maybe { type: 'accept input' OR type: 'accept user email'...}
 { type: 'set-user-password', value: '' }
 ```
 
@@ -177,17 +177,25 @@ If not, what could be improved?
 ```js
 { type: 'click-to-open-modal', state: { newModal: 'login' } }
 ```
-
+```js
+{ type: 'click-login-link', state: { newModal: 'login' } }
+```
 ---
 
 ```js
-{ type: 'toggle-terms-of-service', agreed: true }
+{ type: 'toggle-terms-of-service', agreed: true } // yes
 ```
 
 ---
 
 ```js
 { type: 'set-player-coordinates', x: 41, y: 22 }
+```
+```js
+{ type: 'move-player', x: 41, y: 22 }
+```
+```js
+{ type: 'read-player-coords', x: 41, y: 22 }
 ```
 
 ---
@@ -197,7 +205,16 @@ If not, what could be improved?
   event: 'logout';
 }
 ```
-
+```js
+{
+  type: 'handle-logout', event: 'logout';
+}
+```
+```js
+{
+  type: 'click-logout-link', event: 'logout';
+}
+```
 ---
 
 # Terminology
@@ -299,7 +316,27 @@ const LightSwitch = () => {
   );
 };
 ```
+```jsx
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'TOGGLE_LIGHT':
+      return !state;
+    default:
+      throw new Error(`What?: ${action.type}`)
+  }
+}
 
+const LightSwitch = () => {
+  const [state, dispatch] = React.usReducer(reducer, false);
+
+  return (
+    <>
+      Light is {state ? 'on' : 'off'}.
+      <button onClick={() => dispatch({type: 'TOGGLE_LIGHT'})}>Toggle</button>
+    </>
+  );
+};
+```
 ---
 
 ```jsx
@@ -327,6 +364,44 @@ function App() {
 }
 ```
 
+```jsx
+const reducer = (state, action) => {
+  switch(action.type) {
+    case 'REQUEST_DATA':
+      return 'loading'
+    case 'RECEIVE_DATA':
+      return 'idle'
+    case 'RECEIVE_ERROR':
+      return 'error'
+    default:
+      throw new Error (`error: ${action.type}`)
+  }
+}
+
+function App() {
+  const [state, dispatch] = React.useReducer(reducer, 'idle');
+
+  return (
+    <form
+      onSubmit={() => {
+        dispatch({type: 'REQUEST_DATA')};
+
+        getStatusFromServer()
+          .then(() => {
+            dispatch({type: 'RECEIVE_DATA'});
+          })
+          .catch(() => {
+            dispatch({type: 'RECEIVE_ERROR'});
+          });
+      }}
+    >
+      Status is: {state}
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
 ---
 
 ```jsx
@@ -347,7 +422,39 @@ export const ModalProvider = ({ children }) => {
   );
 };
 ```
+```jsx
+export const ModalContext = React.createContext(null);
 
+const reducer = (state, action) => {
+  switch (action.type){
+    case 'OPEN_MODAL':
+     return action.modal
+    case 'CLOSE_MODAL':
+      return null
+    default:
+      throw new Error(`error: unknown action - ${action.type}`)
+  }
+}
+
+export const ModalProvider = ({ children }) => {
+  const [stat, dispatch] = React.useReducer(reducer,null);
+  
+  const openModal = modal => dispatch({type: 'OPEN_MODAL', modal})
+  const closeModal = modal => dispatch({type: 'CLOSE_MODAL', modal})
+
+  return (
+    <ModalContext.Provider
+      value={{
+        currentModal: state,
+        openModal,
+        closeModal,
+      }}
+    >
+      {children}
+    </ModalContext.Provider>
+  );
+};
+```
 ---
 
 # Immutable updates
@@ -387,8 +494,10 @@ function grantHalfBean(someObject) {
 
 const updatedObj = grantHalfBean(obj);
 
-console.log(obj === updatedObj);
+console.log(obj === updatedObj); //true
 ```
+
+its not a copy it's a reference to the same one.
 
 ---
 
@@ -479,6 +588,8 @@ function reducer(state, action) {
       ...state,
       numOfBeans: state.numOfBeans + 0.5,
     };
+  } else {
+    throw new Error(`error: unknown action - ${action.type}`)
   }
 
   return state;
@@ -523,12 +634,52 @@ const Game = () => {
   );
 };
 ```
+```jsx
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'WIN_POINT':
+     return {
+       ...state
+       points: state.points + 1,
+     }
+    case 'LOSE_POINT':
+      return {
+        ...state
+        points: state.points - 1,
+      }
+    case 'TOGGLE_STATUS':
+      return state.status==='idle' ? {...state, status:'playing'}: {...state, status:'idle'};
+    default:
+      throw new Error('error')
+  }
+}
+
+const initialState = {points: 0, status: 'idle'}
+
+const Game = () => {
+  const [state, dispatch] = React.useReducer(reducer, initialState)
+  const { points, status } = state
+  return (
+    <>
+      Your score: {points}.
+      {status === 'playing' && (
+        <>
+          <button onClick={() => dispatch({type: 'WIN_POINT'})}>🍓</button>
+          <button onClick={() => dispatch({type: 'LOSE_POINT'})}>💀</button>
+        </>
+      )}
+      <button onClick={() => dispatch({type: 'TOGGLE_STATUS'})}>Start game</button>
+    </>
+  );
+};
+```
 
 ---
 
 ```jsx
 import sendDataToServer from './some-madeup-place';
 import FormField from './some-other-madeup-place';
+
 
 const SignUpForm = () => {
   const [firstName, setFirstName] = React.useState('');
@@ -569,7 +720,125 @@ const SignUpForm = () => {
   );
 };
 ```
+```jsx
+import sendDataToServer from './some-madeup-place';
+import FormField from './some-other-madeup-place';
 
+const initialState = { firstName: '', lastName: '', email: '' }
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'UPDATE':
+      return {
+        ...state,
+        ...action.info,
+      }
+    case 'CLEAR':
+      return initialState;
+    default:
+     throw new Error(`error: unknown action in form - ${action.type}`)
+  }
+}
+
+const SignUpForm = () => {
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const { firstName, lastName, email } = state;
+
+  return (
+    <form onSubmit={sendDataToServer}>
+      <FormField
+        label="First Name"
+        value={firstName}
+        onChange={ev => dispatch({type: 'UPDATE', info: {firstName: ev.target.value}})}
+      />
+      <FormField
+        label="Last Name"
+        value={lastName}
+        onChange={ev => dispatch({type: 'UPDATE', info: {lastName: ev.target.value}})}
+      />
+      <FormField
+        label="Email"
+        value={email}
+        onChange={ev => dispatch({type: 'UPDATE', info: {email: ev.target.value}})}
+      />
+
+      <button>Submit</button>
+      <button
+        onClick={ev => {
+          ev.preventDefault();
+
+          dispatch('CLEAR')
+        }}
+      >
+        Reset
+      </button>
+    </form>
+  );
+};
+```
+
+SCOTT's solution:
+```jsx
+import sendDataToServer from './some-madeup-place';
+import FormField from './some-other-madeup-place';
+const initialState = {
+  firstName: '',
+  lastName: '',
+  email: '',
+};
+function reducer(state, action) {
+  switch (action.type) {
+    case 'update-field': {
+      return {
+        ...state,
+        [action.key]: action.value,
+      };
+    }
+    case 'reset-form': {
+      return initialState;
+    }
+  }
+}
+const SignUpForm = () => {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const updateField = (key, value) =>
+    dispatch({ type: 'update-field', key, value });
+  const resetForm = () => dispatch({ type: 'reset-form', key, value });
+  return (
+    <form onSubmit={sendDataToServer}>
+      <FormField
+        label="First Name"
+        value={state.firstName}
+        onChange={ev => updateField('firstName', ev.target.value)}
+      />
+      <FormField
+        label="Last Name"
+        value={state.lastName}
+        onChange={ev => updateField('lastName', ev.target.value)}
+      />
+      <FormField
+        label="Email"
+        value={state.email}
+        onChange={ev => updateField('email', ev.target.value)}
+      />
+      <button>Submit</button>
+      <button
+        onClick={ev => {
+          ev.preventDefault();
+          resetForm();
+        }}
+      >
+        Reset
+      </button>
+    </form>
+  );
+};
+```
 ---
 
 ### `useState` vs `useReducer`
