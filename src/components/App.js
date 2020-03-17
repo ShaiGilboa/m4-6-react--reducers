@@ -1,36 +1,28 @@
 import React from 'react';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
 
-import { SeatProvider, SeatContext } from './SeatContext'
+import { SeatContext } from './SeatContext'
 import TicketWidget from './TicketWidget'
 
 import GlobalStyles from './GlobalStyles';
 
 function App() {
   const {
-    state: {numOfRows, hasLoaded, seats, seatsPerRow},
-    action,
+    seatAction:{
+      receiveSeatInfoFromServer,
+    },
   } = React.useContext(SeatContext)
-    React.useEffect(() => {
+  
+  React.useEffect(() => {
     fetch('/api/seat-availability')
       .then(res => res.json())
-      .then(data => action.receiveSeatInfoFromServer(data));
+      .then(data => receiveSeatInfoFromServer(data));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
       <GlobalStyles />
       <TicketWidget />
-              {/* <button onClick={()=> {
-                  fetch('/api/seat-availability')
-                    .then(res=>res.json())
-                    .then(data=> {
-                      console.log(data)
-                      action.receiveSeatInfoFromServer(data)
-                      })
-                  }
-              }>TODO: write code</button>
-        This venue has {numOfRows} rows, {seatsPerRow} seate per row, {hasLoaded? 'true': 'false'} */}
     </>
   );
 }

@@ -18,18 +18,26 @@ const reducer = (state, action) => {
           hasLoaded: true,
           ...action.data,
           }
-      break;
-  
+    case "MARK_AS_PURCHASED":
+      return {
+        ...state,
+        seats: {
+          ...state.seats,
+          [action.selectedSeatId] : {
+            ...state.seats[action.selectedSeatId],
+            isBooked: true,
+          }
+        }
+      }
     default:
       throw new Error (`Error: unknown action - ${action}`)
   }
 }
 
 export const SeatProvider = ({children}) => {
-  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const [seatState, dispatch] = React.useReducer(reducer, initialState);
 
   const receiveSeatInfoFromServer = data => {
-    console.log('func')
     dispatch({
       type: 'GET_INFO_FROM_SERVER',
       data: {
@@ -37,15 +45,16 @@ export const SeatProvider = ({children}) => {
       }
     });
   };
-  const markSeatAsPurchased = data => {
 
+  const markSeatAsPurchased = selectedSeatId => {
+    if(selectedSeatId)dispatch({type: 'MARK_AS_PURCHASED', selectedSeatId})
   }
 
   return (
     <SeatContext.Provider
       value={{
-        state,
-        action: {
+        seatState,
+        seatAction: {
           receiveSeatInfoFromServer,
           markSeatAsPurchased,
         },

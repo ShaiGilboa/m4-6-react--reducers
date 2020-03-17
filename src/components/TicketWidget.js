@@ -6,50 +6,68 @@ import actualSeat from '../assets/seat-available.svg';
 import Tippy from '@tippy.js/react';
 import 'tippy.js/dist/tippy.css';
 
-import { SeatProvider, SeatContext } from './SeatContext'
+import Snackbar from '@material-ui/core/Snackbar';
+import MuiAlert from '@material-ui/lab/Alert';
+
+import { SeatContext } from './SeatContext'
+import { BookingContext } from './BookingContext'
+import PurchaseModal from './PurchaseModal';
 
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
-const Seat = ({seatId, rowIndex, price, status, tippyText}) => {
+const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess}) => {
   switch (status) {
     case 'available':
       return (
           <Tippy content={ <span>{`${tippyText}$${price}`}</span>}>
-            <Button onClick={()=>{console.log('clickl')}}>
-              <img alt='seat' src={actualSeat} style={{filter: 'grayscale(100%)'}}/>
+            <Button onClick={()=>beginBookingProcess(seatId, price)}>
+              <img alt='seat' src={actualSeat}/>
             </Button>
           </Tippy>
-      )
-      break;
+      );
     case 'unavailable':
       return (
         <Button disabled={true}>
-          <img alt='seat' src={actualSeat} />
+          <img alt='seat' src={actualSeat} style={{filter: 'grayscale(100%)'}} />
         </Button>
       );
-    break;
     default:
       throw new Error(`error: unknown status of seat: ${seatId}`)
   }   
 } 
 
-const TicketWidget = () => {
-  // TODO: use values from Context
-  // const numOfRows = 6;
-  // const seatsPerRow = 6;
+function Alert(props) {
+  return <MuiAlert elevation={6} variant="filled" {...props} />;
+}
 
-  // TODO: implement the loading spinner <CircularProgress />
-  // with the hasLoaded flag
+const TicketWidget = () => {
+  const handleCloseSnack = () => {
+    closeBookingProcess();
+  }
 
   const {
-    state: {numOfRows, hasLoaded, seats, seatsPerRow},
-    action,
-  } = React.useContext(SeatContext)
+      seatState: {numOfRows, hasLoaded, seats, seatsPerRow},
+      seatAction: {
+        markSeatAsPurchased,
+      },
+    } = React.useContext(SeatContext);
+
+  const {
+      bookingState: {
+          selectedSeatId,
+          status,
+        },
+      bookingAction: {
+          beginBookingProcess,
+          closeBookingProcess,
+        }
+    } = React.useContext(BookingContext);
+
   if(!hasLoaded) return<CircularProgress style={{position: 'absolute', top: '50vh', left: '50vw'}}/>
-  console.log('seatsPerRow', seatsPerRow)
-  console.log('numOfRows', numOfRows)
-  console.log('seats', seats)
+
+  if(status==='purchase-ticket-success') markSeatAsPurchased(selectedSeatId);
+
   return (
     <Wrapper>
     
@@ -57,7 +75,7 @@ const TicketWidget = () => {
         const rowName = getRowName(rowIndex);
         return (
           <Row key={rowIndex}>
-            <RowLabel>Row {rowName}</RowLabel>
+            <RowLabel><p>Row {rowName}</p></RowLabel>
             {range(seatsPerRow).map(seatIndex => {
               const seatId = `${rowName}-${getSeatNum(seatIndex)}`;
               return (<SeatWrapper key={seatId}>
@@ -66,7 +84,8 @@ const TicketWidget = () => {
                   seatId={seatId}
                   price={seats[seatId].price}
                   status={seats[seatId].isBooked ? 'unavailable' : 'available'}
-                  tippyText={`Row ${rowName}, seat ${seatIndex} - `}
+                  tippyText={`Row ${rowName}, seat ${seatIndex+1} - `}
+                  beginBookingProcess={beginBookingProcess}
                 />
               </SeatWrapper>
               )
@@ -75,7 +94,12 @@ const TicketWidget = () => {
           </Row>
         );
       })}
-
+      <PurchaseModal />
+      <Snackbar open={status==='purchase-ticket-success'} autoHideDuration={4000} onClose={handleCloseSnack}>
+        <Alert onClose={handleCloseSnack} severity="success">
+          Successfully completed the purchase! Enjoy the show!
+        </Alert>
+      </Snackbar>
     </Wrapper>
   );
 };
@@ -95,6 +119,9 @@ const Wrapper = styled.div`
   border: 1px solid #ccc;
   border-radius: 3px;
   padding: 8px;
+  margin: 20px auto;
+  width: fit-content;
+  height: fit-content;
 `;
 
 const Row = styled.div`
@@ -108,6 +135,13 @@ const Row = styled.div`
 
 const RowLabel = styled.div`
   font-weight: bold;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  p{
+    color: black;
+  }
 `;
 
 const SeatWrapper = styled.div`
