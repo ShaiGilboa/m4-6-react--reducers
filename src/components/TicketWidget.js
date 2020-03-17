@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import actualSeat from '../assets/seat-available.svg';
+import checkMark from '../assets/checkMark.png'
 
 import Tippy from '@tippy.js/react';
 import 'tippy.js/dist/tippy.css';
@@ -16,20 +17,24 @@ import PurchaseModal from './PurchaseModal';
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
-const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess}) => {
-  switch (status) {
+const checkMarkStyle = {position: 'absolute', width: '20px', right: '-2px', bottom: '0'}
+
+const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess, seatSelect, seatSelectedArr}) => {
+  switch (status.type) {
     case 'available':
       return (
           <Tippy content={ <span>{`${tippyText}$${price}`}</span>}>
-            <Button onClick={()=>beginBookingProcess(seatId, price)}>
+            <Button onClick={()=>seatSelect(seatId, price)} style={{position:'relative'}}>
               <img alt='seat' src={actualSeat}/>
+              {seatSelectedArr.some(seat=> seat.seatId === seatId) ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
             </Button>
           </Tippy>
       );
     case 'unavailable':
       return (
-        <Button disabled={true}>
+        <Button disabled={true} style={{position:'relative'}}>
           <img alt='seat' src={actualSeat} style={{filter: 'grayscale(100%)'}} />
+          {status.purchased==='purchased' ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
         </Button>
       );
     default:
@@ -41,21 +46,35 @@ function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
 
+
 const TicketWidget = () => {
   const handleCloseSnack = () => {
     closeBookingProcess();
   }
 
+  const seatSelect = (seatId, price) => {
+    const index = seatSelectedArr.findIndex(seat=> seat.seatId === seatId)
+    index === -1 ? addSeatToSelectedArr({seatId, price}) : removeIndex(index)
+  }
+
   const {
-      seatState: {numOfRows, hasLoaded, seats, seatsPerRow},
+      seatState: {
+        numOfRows,
+        hasLoaded,
+        seats,
+        seatsPerRow,
+        seatSelectedArr,
+        },
       seatAction: {
         markSeatAsPurchased,
+        addSeatToSelectedArr,
+        removeIndex,
       },
     } = React.useContext(SeatContext);
 
   const {
       bookingState: {
-          selectedSeatId,
+          bookingSeatSelectedArr,
           status,
         },
       bookingAction: {
@@ -66,11 +85,10 @@ const TicketWidget = () => {
 
   if(!hasLoaded) return<CircularProgress style={{position: 'absolute', top: '50vh', left: '50vw'}}/>
 
-  if(status==='purchase-ticket-success') markSeatAsPurchased(selectedSeatId);
+  if(status==='purchase-ticket-success') markSeatAsPurchased(bookingSeatSelectedArr);
 
   return (
     <Wrapper>
-    
       {range(numOfRows).map(rowIndex => {
         const rowName = getRowName(rowIndex);
         return (
@@ -83,9 +101,11 @@ const TicketWidget = () => {
                   rowIndex={rowIndex}
                   seatId={seatId}
                   price={seats[seatId].price}
-                  status={seats[seatId].isBooked ? 'unavailable' : 'available'}
+                  status={seats[seatId].isBooked ? {type:'unavailable', purchased:seats[seatId].isBooked} : {type:'available'}}
                   tippyText={`Row ${rowName}, seat ${seatIndex+1} - `}
                   beginBookingProcess={beginBookingProcess}
+                  seatSelect={seatSelect}
+                  seatSelectedArr={seatSelectedArr}
                 />
               </SeatWrapper>
               )
@@ -94,6 +114,7 @@ const TicketWidget = () => {
           </Row>
         );
       })}
+      {seatSelectedArr.length ? <button onClick={()=> beginBookingProcess(seatSelectedArr)}>purchase</button> : null}
       <PurchaseModal />
       <Snackbar open={status==='purchase-ticket-success'} autoHideDuration={4000} onClose={handleCloseSnack}>
         <Alert onClose={handleCloseSnack} severity="success">

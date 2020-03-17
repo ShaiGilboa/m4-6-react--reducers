@@ -9,8 +9,7 @@ const initialState ={
                     - `error`
                     - `purchased`*/
   error: null,
-  selectedSeatId: null,
-  price: null,
+  bookingSeatSelectedArr: [],
 }
 
 const reducer = (state, action) => {
@@ -18,9 +17,8 @@ const reducer = (state, action) => {
     case 'BEGIN_BOOKING':
       return ({
         ...state,
-        status: 'seat-selected',
-        selectedSeatId: action.seatId,
-        price: action.price,
+        status: 'seats-selected',
+        bookingSeatSelectedArr: action.seatSelectedArr,
       })
     case 'AWAIT':
       return ({
@@ -36,6 +34,7 @@ const reducer = (state, action) => {
       return ({
         ...initialState,
         status: 'purchase-ticket-success',
+        bookingSeatSelectedArr: [],
       })
     case 'ERROR':
       return ({
@@ -52,16 +51,13 @@ const reducer = (state, action) => {
 export const BookingProvider = ({children}) => {
   const [bookingState, dispatch] = React.useReducer(reducer, initialState);
 
-  const beginBookingProcess = (seatId, price) => {
-    dispatch({type: 'BEGIN_BOOKING', seatId, price})
+  const beginBookingProcess = (seatSelectedArr) => {
+    dispatch({type: 'BEGIN_BOOKING', seatSelectedArr})
     return 
   }
 
   const closeBookingProcess = () => {
-    // console.log('pre',bookingState)
     dispatch({type: 'CLOSE'})
-    // console.log('post',bookingState)
-
   }
 
   const awaitingResponse = () => {

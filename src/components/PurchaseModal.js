@@ -27,12 +27,15 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-function createData(name, selectedSeatId, price) {
-  let seatsInfo = [];
-  if(selectedSeatId) seatsInfo = selectedSeatId.split('-');
-  const row = seatsInfo[0];
-  const seat = seatsInfo[1];
-  return { name, row, seat, price };
+function createData(name, bookingSeatSelectedArr) {
+  const seatsInfo = [];
+  if(bookingSeatSelectedArr.length) bookingSeatSelectedArr.forEach(Aseat=> {
+    const nameArr = Aseat.seatId.split('-');
+    const row = nameArr[0];
+    const seat = nameArr[1]
+    seatsInfo.push({name, row, seat, price: Aseat.price})
+  });
+  return seatsInfo;
 }
 
 const useStyles = makeStyles({
@@ -76,7 +79,7 @@ const PurchaseModal = () => {
   const bookingMade2 = (outcome) => {
     setCardInfo('');
     setExpiration('');
-    markSeatAsPurchased(selectedSeatId);
+    markSeatAsPurchased(seatSelectedArr);
     bookingMade(outcome);
   }
 
@@ -86,7 +89,7 @@ const PurchaseModal = () => {
     fetch('/api/book-seat', {
         method: 'POST',
         body: JSON.stringify({
-          "seatId": selectedSeatId,
+          "seatId": seatSelectedArr[0].seatId,
           "creditCard": cardInfo,
           "expiration": expiration,
             }),
@@ -105,6 +108,12 @@ const PurchaseModal = () => {
     closeBookingProcess();
   };
 
+  const calculatePrice = () => {
+    let sum = 0;
+    seatSelectedArr.forEach(seat=>sum+=seat.price);
+    return sum
+  }
+
   const classes = useStyles();
 
   const [cardInfo, setCardInfo] = React.useState('')
@@ -112,8 +121,7 @@ const PurchaseModal = () => {
   
   const {
       bookingState: {
-          selectedSeatId,
-          price,
+          bookingSeatSelectedArr,
           status,
           error,
         },
@@ -125,18 +133,19 @@ const PurchaseModal = () => {
     } = React.useContext(BookingContext);
 
   const {
+      seatState: {
+        seatSelectedArr,
+      },
       seatAction: {
         markSeatAsPurchased,
       },
     } = React.useContext(SeatContext);
 
-  const rows = [
-    createData('Seat-info', selectedSeatId, price),
-  ];
+  const rows = createData('Seat-info', bookingSeatSelectedArr);
 
   return(
     <Dialog
-        open={selectedSeatId !== null}
+        open={status==='seats-selected' || status==='purchase-ticket-failure' || status==='awaiting-response'}
         TransitionComponent={Transition}
         className={classes.purchaseModal}
         onClose={handleClose}
@@ -144,7 +153,7 @@ const PurchaseModal = () => {
       <DialogTitle id="booking-form">{"Purchase ticket"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="booking-description">
-            {`You are purchasing 1 ticket, for the price of $${price}`}
+            {`You are purchasing ${seatSelectedArr.length} ticket/s, for the price of $${calculatePrice()}`}
           </DialogContentText>
           <TableContainer component={Paper}>
             <Table className={classes.table} size='small' aria-label="simple table">
@@ -157,7 +166,7 @@ const PurchaseModal = () => {
               </TableHead>
               <TableBody>
                 {rows.map(row => (
-                  <TableRow key={row.name}>
+                  <TableRow key={`${row.name}-${row.row}.${row.seat}`}>
                     <TableCell component="th" scope="row" className={classes.tableCell}>
                       {row.row}
                     </TableCell>
