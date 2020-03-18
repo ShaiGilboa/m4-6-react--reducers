@@ -5,31 +5,20 @@ import Slide from '@material-ui/core/Slide';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import Button from '@material-ui/core/Button';
-
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 import { makeStyles } from '@material-ui/core/styles';
 import TableComponent from './TableComponent';
 
-import TextField from '@material-ui/core/TextField';
-
-import { SeatContext } from './SeatContext'
-import { BookingContext } from './BookingContext'
+import { SeatContext } from './SeatContext';
+import { BookingContext } from './BookingContext';
+import Form from './Form';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
 const useStyles = makeStyles({
-  cardInfo: {
-    flex: '3',
-    margin: '0 10px',
-  },
-  secondary : {
-    flex: '1',
-    margin: '0 10px',
-  },
+
   form: {
     width: '100%',
     display: 'flex',
@@ -38,10 +27,7 @@ const useStyles = makeStyles({
     marginBottom: '20px',
     color: '#04395E',
   },
-  formInput: {
-    display: 'flex',
-    flexDirection: 'row',
-  },
+
   error: {
     color: 'red',
     margin: '10px auto',
@@ -52,7 +38,7 @@ const useStyles = makeStyles({
 
 const PurchaseModal = () => {
 
-  const bookingMade2 = (outcome) => {
+  const bookingMadeSuccessClearStates = (outcome) => {
     setCardInfo('');
     setExpiration('');
     markSeatAsPurchased(seatSelectedArr);
@@ -61,11 +47,12 @@ const PurchaseModal = () => {
 
   const handleSubmit= (cardInfo,expiration) => {
     awaitingResponse();
+    const seatIdArr = seatSelectedArr.map(seat=>(seat.seatId));
 
     fetch('/api/book-seat', {
         method: 'POST',
         body: JSON.stringify({
-          "seatId": seatSelectedArr[0].seatId,
+          "seatIdArr": seatIdArr,
           "creditCard": cardInfo,
           "expiration": expiration,
             }),
@@ -76,7 +63,7 @@ const PurchaseModal = () => {
       })
       .then(res=>res.json())
       .then(data=>{
-        data.success ? bookingMade2(data) : bookingMade(data)
+        data.success ? bookingMadeSuccessClearStates(data) : bookingMade(data)
       })
   }
 
@@ -133,37 +120,14 @@ const PurchaseModal = () => {
         <TableComponent bookingSeatSelectedArr={bookingSeatSelectedArr} />
       </DialogContent>
       <DialogContent className={classes.form}>
-        <form  noValidate autoComplete="off" onSubmit={(e)=>{e.preventDefault();handleSubmit(cardInfo,expiration)}}>
-          <h2>Enter payment and expiration</h2>
-          <div className={classes.formInput} >
-            <TextField
-              className={classes.cardInfo}
-              name='cardInfo'
-              id="cardInfo" label="Card information"
-              type="text"
-              value={cardInfo}
-              onChange={ev => setCardInfo(ev.currentTarget.value)}
-              variant="outlined"
-            />
-            <TextField
-              className={classes.secondary}
-              name='expiration'
-              id="expiration" label="Expiration MMYY"
-              type="text"
-              value={expiration}
-              onChange={ev => setExpiration(ev.currentTarget.value)}
-              variant="outlined"
-            />
-            <Button 
-              className={classes.secondary}
-              variant="contained"
-              color="primary"
-              type='submit'
-              >
-              {status==='awaiting-response' ? <CircularProgress style={{color: 'black'}}/> : 'Purchase'}
-            </Button>
-          </div>
-        </form>
+      <Form 
+        handleSubmit={handleSubmit}
+        cardInfo={cardInfo}
+        setCardInfo={setCardInfo}
+        expiration={expiration}
+        setExpiration={setExpiration}
+        status={status}
+        />
         {error? <div className={classes.error}>{error}</div> : null}
       </DialogContent>
     </Dialog>

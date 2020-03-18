@@ -24,22 +24,28 @@ router.get('/api/seat-availability', (req, res) => {
 });
 let lastBookingAttemptSucceeded = false;
 router.post('/api/book-seat', async (req, res) => {
-  const { seatId, creditCard, expiration } = req.body;
+  const { seatIdArr, creditCard, expiration } = req.body;
   if (!state) {
-    state = {
-      seats: getInitialSeatData(),
-    };
+    seatIdArr.forEach(seatId => {
+      state = getInitialSeatData();
+    });
   }
-  const isAlreadyBooked = !!state.seats[seatId].isBooked;
+
+  const isAlreadyBooked = seatIdArr.map(seatId=>!!state.seats[seatId].isBooked);
+
   await delay(Math.random() * 3000);
   if (!creditCard || !expiration) {
     return res.status(400).json({
       message: 'Please provide credit card information!',
     });
   }
-  if (isAlreadyBooked) {
+  if (isAlreadyBooked.includes(true)) {
+    let seatsBooked = '';
+    for(let i = 0; i < isAlreadyBooked.length; i++){
+      if(isAlreadyBooked[i])seatsBooked+=(seatIdArr[i]+ ", ");
+    }
     return res.status(400).json({
-      message: 'This seat has already been booked!',
+      message: `seat(s) ${seatsBooked}are already been booked!`,
     });
   }
   if (lastBookingAttemptSucceeded) {
@@ -49,7 +55,7 @@ router.post('/api/book-seat', async (req, res) => {
     });
   }
   lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
-  state.seats[seatId].isBooked = true;
+  seatIdArr.forEach(seatId => state.seats[seatId].isBooked = true);
   return res.json({
     success: true,
   });
