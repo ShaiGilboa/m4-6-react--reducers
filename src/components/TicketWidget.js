@@ -17,7 +17,8 @@ import PurchaseModal from './PurchaseModal';
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
-const checkMarkStyle = {position: 'absolute', width: '20px', right: '-2px', bottom: '0'}
+const checkMarkStyle = {position: 'absolute', width: '20px',bottom: '0', right: '0'};
+const purchaseButtonStyle = {position: '-webkit-sticky', position: 'sticky', bottom:'0', height: '10vh', width:'100%', fontWeight:'900', zIndex:'1',}
 
 const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess, seatSelect, seatSelectedArr}) => {
   switch (status.type) {
@@ -88,6 +89,7 @@ const TicketWidget = () => {
   if(status==='purchase-ticket-success') markSeatAsPurchased(bookingSeatSelectedArr);
 
   return (
+    <>
     <Wrapper>
       {range(numOfRows).map(rowIndex => {
         const rowName = getRowName(rowIndex);
@@ -114,14 +116,15 @@ const TicketWidget = () => {
           </Row>
         );
       })}
-      {seatSelectedArr.length ? <button onClick={()=> beginBookingProcess(seatSelectedArr)}>purchase</button> : null}
       <PurchaseModal />
+      {seatSelectedArr.length ? <button onClick={()=> beginBookingProcess(seatSelectedArr)} style={purchaseButtonStyle}>Purchase</button> : null}
       <Snackbar open={status==='purchase-ticket-success'} autoHideDuration={4000} onClose={handleCloseSnack}>
         <Alert onClose={handleCloseSnack} severity="success">
           Successfully completed the purchase! Enjoy the show!
         </Alert>
       </Snackbar>
     </Wrapper>
+  </>
   );
 };
 
@@ -143,6 +146,7 @@ const Wrapper = styled.div`
   margin: 20px auto;
   width: fit-content;
   height: fit-content;
+  position: relative;
 `;
 
 const Row = styled.div`
