@@ -115,7 +115,7 @@ const PurchaseModal = () => {
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="booking-description">
-          {`You are purchasing ${seatSelectedArr.length} ticket/s, for the price of $${calculatePrice()}`}
+          {`You are purchasing ${seatSelectedArr.length} ticket/s, for the price of $${calculatePrice()} total`}
         </DialogContentText>
         <TableComponent bookingSeatSelectedArr={bookingSeatSelectedArr} />
       </DialogContent>
