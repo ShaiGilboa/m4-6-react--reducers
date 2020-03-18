@@ -1,11 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import actualSeat from '../assets/seat-available.svg';
-import checkMark from '../assets/checkMark.png'
-
-import Tippy from '@tippy.js/react';
-import 'tippy.js/dist/tippy.css';
 
 import Snackbar from '@material-ui/core/Snackbar';
 import MuiAlert from '@material-ui/lab/Alert';
@@ -13,39 +8,16 @@ import MuiAlert from '@material-ui/lab/Alert';
 import { SeatContext } from './SeatContext'
 import { BookingContext } from './BookingContext'
 import PurchaseModal from './PurchaseModal';
+import Seat from './Seat';
 
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
-const checkMarkStyle = {position: 'absolute', width: '20px', right: '-2px', bottom: '0'}
-
-const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess, seatSelect, seatSelectedArr}) => {
-  switch (status.type) {
-    case 'available':
-      return (
-          <Tippy content={ <span>{`${tippyText}$${price}`}</span>}>
-            <Button onClick={()=>seatSelect(seatId, price)} style={{position:'relative'}}>
-              <img alt='seat' src={actualSeat}/>
-              {seatSelectedArr.some(seat=> seat.seatId === seatId) ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
-            </Button>
-          </Tippy>
-      );
-    case 'unavailable':
-      return (
-        <Button disabled={true} style={{position:'relative'}}>
-          <img alt='seat' src={actualSeat} style={{filter: 'grayscale(100%)'}} />
-          {status.purchased==='purchased' ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
-        </Button>
-      );
-    default:
-      throw new Error(`error: unknown status of seat: ${seatId}`)
-  }   
-} 
+const purchaseButtonStyle = {position: '-webkit-sticky', position: 'sticky', bottom:'0', height: '10vh', width:'100%', fontWeight:'900', zIndex:'1',}
 
 function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
-
 
 const TicketWidget = () => {
   const handleCloseSnack = () => {
@@ -88,6 +60,7 @@ const TicketWidget = () => {
   if(status==='purchase-ticket-success') markSeatAsPurchased(bookingSeatSelectedArr);
 
   return (
+    <>
     <Wrapper>
       {range(numOfRows).map(rowIndex => {
         const rowName = getRowName(rowIndex);
@@ -114,26 +87,17 @@ const TicketWidget = () => {
           </Row>
         );
       })}
-      {seatSelectedArr.length ? <button onClick={()=> beginBookingProcess(seatSelectedArr)}>purchase</button> : null}
       <PurchaseModal />
+      {seatSelectedArr.length ? <button onClick={()=> beginBookingProcess(seatSelectedArr)} style={purchaseButtonStyle}>Purchase</button> : null}
       <Snackbar open={status==='purchase-ticket-success'} autoHideDuration={4000} onClose={handleCloseSnack}>
         <Alert onClose={handleCloseSnack} severity="success">
           Successfully completed the purchase! Enjoy the show!
         </Alert>
       </Snackbar>
     </Wrapper>
+  </>
   );
 };
-
-const Button = styled.button`
-  border: none;
-  color: none;
-  width: fit-content;
-  height: fit-content;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-`;
 
 const Wrapper = styled.div`
   background: #eee;
@@ -143,6 +107,7 @@ const Wrapper = styled.div`
   margin: 20px auto;
   width: fit-content;
   height: fit-content;
+  position: relative;
 `;
 
 const Row = styled.div`
