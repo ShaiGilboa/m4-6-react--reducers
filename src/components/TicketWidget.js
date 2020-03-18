@@ -1,11 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import actualSeat from '../assets/seat-available.svg';
-import checkMark from '../assets/checkMark.png'
-
-import Tippy from '@tippy.js/react';
-import 'tippy.js/dist/tippy.css';
 
 import Snackbar from '@material-ui/core/Snackbar';
 import MuiAlert from '@material-ui/lab/Alert';
@@ -13,40 +8,16 @@ import MuiAlert from '@material-ui/lab/Alert';
 import { SeatContext } from './SeatContext'
 import { BookingContext } from './BookingContext'
 import PurchaseModal from './PurchaseModal';
+import Seat from './Seat';
 
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
-const checkMarkStyle = {position: 'absolute', width: '20px',bottom: '0', right: '0'};
 const purchaseButtonStyle = {position: '-webkit-sticky', position: 'sticky', bottom:'0', height: '10vh', width:'100%', fontWeight:'900', zIndex:'1',}
-
-const Seat = ({seatId, rowIndex, price, status, tippyText, beginBookingProcess, seatSelect, seatSelectedArr}) => {
-  switch (status.type) {
-    case 'available':
-      return (
-          <Tippy content={ <span>{`${tippyText}$${price}`}</span>}>
-            <Button onClick={()=>seatSelect(seatId, price)} style={{position:'relative'}}>
-              <img alt='seat' src={actualSeat}/>
-              {seatSelectedArr.some(seat=> seat.seatId === seatId) ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
-            </Button>
-          </Tippy>
-      );
-    case 'unavailable':
-      return (
-        <Button disabled={true} style={{position:'relative'}}>
-          <img alt='seat' src={actualSeat} style={{filter: 'grayscale(100%)'}} />
-          {status.purchased==='purchased' ? <img alt="check" src={checkMark} style={checkMarkStyle}/> : null}
-        </Button>
-      );
-    default:
-      throw new Error(`error: unknown status of seat: ${seatId}`)
-  }   
-} 
 
 function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
-
 
 const TicketWidget = () => {
   const handleCloseSnack = () => {
@@ -127,16 +98,6 @@ const TicketWidget = () => {
   </>
   );
 };
-
-const Button = styled.button`
-  border: none;
-  color: none;
-  width: fit-content;
-  height: fit-content;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-`;
 
 const Wrapper = styled.div`
   background: #eee;
